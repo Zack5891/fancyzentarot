@@ -1,0 +1,39 @@
+document.addEventListener('DOMContentLoaded', function() {
+  // 檢查是否從 Google 表單跳轉而來
+  const urlParams = new URLSearchParams(window.location.search);
+  const source = urlParams.get('source');
+  
+  if (source === 'googleform') {
+    try {
+      // 獲取並解析表單數據
+      const formDataStr = localStorage.getItem('formData');
+      if (formDataStr) {
+        const formData = JSON.parse(formDataStr);
+        console.log('接收到表單數據:', formData);
+        
+        // 在這裡使用數據自動填充 SimplyBook 表單
+        // 例如：
+        setTimeout(function() {
+          // 給 SimplyBook 表單一些時間加載
+          const nameField = document.querySelector('input[name="name"]'); // 根據實際欄位名稱調整
+          const emailField = document.querySelector('input[name="email"]');
+          const phoneField = document.querySelector('input[name="phone"]');
+          
+          if (nameField && formData.name) nameField.value = formData.name;
+          if (emailField && formData.email) emailField.value = formData.email;
+          if (phoneField && formData.phone) phoneField.value = formData.phone;
+          
+          // 可能需要觸發變更事件
+          if (nameField) nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          if (emailField) emailField.dispatchEvent(new Event('change', { bubbles: true }));
+          if (phoneField) phoneField.dispatchEvent(new Event('change', { bubbles: true }));
+        }, 1000);
+        
+        // 使用後清除數據
+        localStorage.removeItem('formData');
+      }
+    } catch (error) {
+      console.error('處理表單數據時出錯:', error);
+    }
+  }
+});
