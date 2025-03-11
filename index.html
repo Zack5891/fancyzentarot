@@ -84,6 +84,7 @@
             justify-content: center;
             gap: 15px;
             margin: 20px 0;
+            flex-wrap: wrap; /* 允許按鈕在需要時換行 */
         }
         
         .btn {
@@ -93,6 +94,8 @@
             font-weight: bold;
             transition: background-color 0.3s;
             cursor: pointer;
+            min-width: 120px; /* 設定最小寬度 */
+            text-align: center;
         }
         
         .primary-btn {
@@ -121,12 +124,17 @@
             
             .action-buttons {
                 flex-direction: column;
+                align-items: center;
                 gap: 10px;
             }
             
             .btn {
-                width: 100%;
-                text-align: center;
+                width: 80%; /* 在手機上只佔螢幕寬度的80% */
+                max-width: 250px; /* 設定最大寬度 */
+            }
+            
+            .container {
+                padding: 10px; /* 減少容器的內邊距 */
             }
         }
     </style>
