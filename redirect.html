@@ -1,39 +1,177 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // 檢查是否從 Google 表單跳轉而來
-  const urlParams = new URLSearchParams(window.location.search);
-  const source = urlParams.get('source');
-  
-  if (source === 'googleform') {
-    try {
-      // 獲取並解析表單數據
-      const formDataStr = localStorage.getItem('formData');
-      if (formDataStr) {
-        const formData = JSON.parse(formDataStr);
-        console.log('接收到表單數據:', formData);
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>轉向預約系統 - Fancy Zen Tarot</title>
+    <style>
+        /* 加載指示器樣式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .loading-indicator {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
         
-        // 在這裡使用數據自動填充 SimplyBook 表單
-        // 例如：
-        setTimeout(function() {
-          // 給 SimplyBook 表單一些時間加載
-          const nameField = document.querySelector('input[name="name"]'); // 根據實際欄位名稱調整
-          const emailField = document.querySelector('input[name="email"]');
-          const phoneField = document.querySelector('input[name="phone"]');
-          
-          if (nameField && formData.name) nameField.value = formData.name;
-          if (emailField && formData.email) emailField.value = formData.email;
-          if (phoneField && formData.phone) phoneField.value = formData.phone;
-          
-          // 可能需要觸發變更事件
-          if (nameField) nameField.dispatchEvent(new Event('change', { bubbles: true }));
-          if (emailField) emailField.dispatchEvent(new Event('change', { bubbles: true }));
-          if (phoneField) phoneField.dispatchEvent(new Event('change', { bubbles: true }));
-        }, 1000);
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ce3867;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
         
-        // 使用後清除數據
-        localStorage.removeItem('formData');
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加載指示器 -->
+    <div id="loadingIndicator" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>正在處理您的資料，即將前往預約系統...</p>
+    </div>
+
+    <!-- SimplyBook 小工具 -->
+    <div id="bookingWidget"></div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 檢查是否從 Google 表單跳轉而來
+      const urlParams = new URLSearchParams(window.location.search);
+      const source = urlParams.get('source');
+      
+      if (source === 'googleform') {
+        // 顯示加載指示器
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) loadingIndicator.style.display = 'flex';
+        
+        try {
+          // 獲取並解析表單數據
+          const formDataStr = localStorage.getItem('formData');
+          if (formDataStr) {
+            const formData = JSON.parse(formDataStr);
+            console.log('接收到表單數據:', formData);
+            
+            // 設置一個間隔檢查 iframe 是否已加載
+            let checkIframeInterval = setInterval(function() {
+              // 嘗試獲取 iframe
+              const iframe = document.querySelector('iframe[src*="simplybook"]');
+              if (iframe && iframe.contentDocument) {
+                clearInterval(checkIframeInterval);
+                
+                // 給 iframe 內容額外的時間加載
+                setTimeout(function() {
+                  try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // 使用更精確的選擇器
+                    const nameField = iframeDoc.querySelector('input[name="client[name]"]') || 
+                                     iframeDoc.querySelector('.form-client-name input');
+                                     
+                    const emailField = iframeDoc.querySelector('input[name="client[email]"]') || 
+                                      iframeDoc.querySelector('.form-client-email input') ||
+                                      iframeDoc.querySelector('.form-client-em input');
+                                      
+                    const phoneField = iframeDoc.querySelector('input[name="client[phone]"]') || 
+                                      iframeDoc.querySelector('.form-client-phone input') ||
+                                      iframeDoc.querySelector('.form-client-ph input');
+                    
+                    // 填充欄位
+                    if (nameField && formData.name) {
+                      nameField.value = formData.name;
+                      nameField.dispatchEvent(new Event('input', { bubbles: true }));
+                      console.log('已填充姓名欄位');
+                    } else {
+                      console.log('找不到姓名欄位或沒有姓名數據');
+                    }
+                    
+                    if (emailField && formData.email) {
+                      emailField.value = formData.email;
+                      emailField.dispatchEvent(new Event('input', { bubbles: true }));
+                      console.log('已填充電子郵件欄位');
+                    } else {
+                      console.log('找不到電子郵件欄位或沒有電子郵件數據');
+                    }
+                    
+                    if (phoneField && formData.phone) {
+                      phoneField.value = formData.phone;
+                      phoneField.dispatchEvent(new Event('input', { bubbles: true }));
+                      console.log('已填充電話欄位');
+                    } else {
+                      console.log('找不到電話欄位或沒有電話數據');
+                    }
+                    
+                  } catch (error) {
+                    console.error('填充表單時出錯:', error);
+                  }
+                  
+                  // 隱藏加載指示器
+                  if (loadingIndicator) loadingIndicator.style.display = 'none';
+                  
+                  // 使用後清除數據
+                  localStorage.removeItem('formData');
+                }, 2500); // 增加等待時間至 2.5 秒
+              }
+            }, 500);
+            
+            // 設置超時機制
+            setTimeout(function() {
+              clearInterval(checkIframeInterval);
+              if (loadingIndicator) loadingIndicator.style.display = 'none';
+              console.log('等待 iframe 加載超時');
+            }, 15000); // 增加超時時間至 15 秒
+          } else {
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            console.log('未找到表單數據');
+          }
+        } catch (error) {
+          console.error('處理表單數據時出錯:', error);
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+        }
       }
-    } catch (error) {
-      console.error('處理表單數據時出錯:', error);
-    }
-  }
-});
+    });
+
+    // 加載 SimplyBook 小工具
+    window.onload = function() {
+      var script = document.createElement('script');
+      script.src = "//widget.simplybook.asia/v2/widget/widget.js";
+      script.onload = function() {
+        var widget = new SimplybookWidget({
+          "widget_type": "iframe",
+          "url": "https://fancyzentarot.simplybook.asia",
+          "theme": "default",
+          "theme_settings": {
+            "timeline_show_end_time": "1",
+            "timeline_hide_unavailable": "1",
+            "hide_past_days": "0",
+            "sb_base_color": "#ce3867",
+            "display_item_mode": "block",
+            "sb_busy": "#dad2ce",
+            "sb_available": "#d3e0f1"
+          },
+          "container_id": "bookingWidget"
+        });
+      };
+      document.body.appendChild(script);
+    };
+    </script>
+</body>
+</html>
